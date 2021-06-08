@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" version="3.6" method="upgrade" group="hikashoppayment">
+    <name>RayPay for Hikashop</name>
+    <version>1.0</version>
+    <description>RayPay</description>
+    <author>Developer: hanieh729 , Publisher: Saminray</author>
+    <authorUrl>https://saminray.com</authorUrl>
+    <authorEmail>info@saminray.com</authorEmail>
+    <creationDate>June 2021</creationDate>
+    <copyright>Copyright (C) 2021 RayPay</copyright>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html GPLv2 or later</license>
+    <files>
+        <filename plugin="raypay">raypay.php</filename>
+        <filename>raypay_configuration.php</filename>
+    </files>
+    <updateservers>
+        <server type="extension" priority="1" name="Hikashoppayment - RayPay for Hikashop">https://raypay.ir/plugins</server>
+    </updateservers>
+    <params addpath="/components/com_hikashop/params">
+        <param name="pluginoptions" type="pluginoptions" default="plugin" label="hikashop"
+               description="HikaShop options"/>
+    </params>
+    <config>
+        <fields name="params" addfieldpath="/components/com_hikashop/fields">
+            <fieldset name="basic">
+                <field id="pluginoptions" name="pluginoptions" type="pluginoptions" label="hikashop"
+                       description="HikaShop options"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>
