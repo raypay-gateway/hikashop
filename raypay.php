@@ -159,8 +159,8 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
   {
     $app        = JFactory::getApplication();
     $jinput     = $app->input;
-    $invoiceId = $jinput->get->get('?invoiceID', '', 'STRING');;
-    $orderId = $jinput->get->get('order_id', '', 'STRING');;
+    $invoiceId = $jinput->get->get('?invoiceID', '', 'STRING');
+    $orderId = $jinput->get->get('order_id', '', 'STRING');
 
     if (empty($invoiceId)) {
       $msg = 'سفارش پیدا نشد.';
