@@ -258,7 +258,6 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
       $this->order_log($order_id, $msg);
       $app->redirect(HIKASHOP_LIVE . 'index.php?option=com_hikashop&ctrl=order', '<h4>' . $msg . '</h4>', 'Error');
     }
-
   }
 
 
