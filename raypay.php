@@ -116,11 +116,21 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
           'comment'      => $desc
       );
       $this->order_log(json_encode($data)  , "data");
-    $url  = 'http://185.165.118.211:14000/raypay/api/v1/Payment/getPaymentTokenWithUserID';
-    $options = $this->options();
-    $result = $this->http->post($url, json_encode($data, true), $options);
-    $result = json_decode($result->body);
-    $http_status = $result->StatusCode;
+    $url  = 'https://api.raypay.ir/raypay/api/v1/Payment/getPaymentTokenWithUserID';
+	$options = array('Content-Type: application/json');
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($ch, CURLOPT_HTTPHEADER,$options );
+	$result = curl_exec($ch);
+	$result = json_decode($result );
+	$http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	curl_close($ch);
+    //$options = $this->options();
+    //$result = $this->http->post($url, json_encode($data, true), $options);
+    //$result = json_decode($result->body);
+    //$http_status = $result->StatusCode;
 
     //check http error
     if ($http_status != 200 || empty($result) || empty($result->Data)) {
@@ -190,11 +200,21 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
         $history->amount = round($dbOrder->order_full_price, (int)$this->currency->currency_locale['int_frac_digits']);
         $history->data = ob_get_clean();
         $data = array('order_id' => $order_id);
-        $url = 'http://185.165.118.211:14000/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoiceId;;
-        $options = $this->options();
-        $result = $this->http->post($url, json_encode($data, true), $options);
-        $result = json_decode($result->body);
-        $http_status = $result->StatusCode;
+        $url = 'https://api.raypay.ir/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoiceId;
+		$options = array('Content-Type: application/json');
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HTTPHEADER,$options );
+		$result = curl_exec($ch);
+		$result = json_decode($result );
+		$http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+        //$options = $this->options();
+        //$result = $this->http->post($url, json_encode($data, true), $options);
+        //$result = json_decode($result->body);
+        //$http_status = $result->StatusCode;
 
         //check http error
         if ($http_status != 200) {
@@ -258,6 +278,7 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
       $this->order_log($order_id, $msg);
       $app->redirect(HIKASHOP_LIVE . 'index.php?option=com_hikashop&ctrl=order', '<h4>' . $msg . '</h4>', 'Error');
     }
+
   }
 
 
