@@ -12,6 +12,7 @@
     <files>
         <filename plugin="raypay">raypay.php</filename>
         <filename>raypay_configuration.php</filename>
+        <filename>raypay_redirect.php</filename>
     </files>
     <updateservers>
         <server type="extension" priority="1" name="Hikashoppayment - RayPay for Hikashop">https://raypay.ir/plugins</server>

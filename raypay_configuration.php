@@ -25,13 +25,30 @@ defined('_JEXEC') or die('Restricted access'); ?>
 </tr>
 <tr>
     <td class="key">
-        <label for="data[payment][payment_params][acceptor_code]"><?php
-            echo JText::_('کد پذیرنده');
+        <label for="data[payment][payment_params][marketing_id]"><?php
+            echo JText::_('شناسه کسب و کار');
             ?></label>
     </td>
     <td>
-        <input type="text" name="data[payment][payment_params][acceptor_code]"
-               value="<?php echo $this->escape(@$this->element->payment_params->acceptor_code); ?>"/>
+        <input type="text" name="data[payment][payment_params][marketing_id]"
+               value="<?php echo $this->escape(@$this->element->payment_params->marketing_id); ?>"/>
+    </td>
+</tr>
+<tr>
+    <td class="key">
+        <label for="data[payment][payment_params][sandbox]"><?php
+            echo JText::_('فعالسازی SandBox');
+            ?></label>
+    </td>
+    <td>
+        <select name="data[payment][payment_params][sandbox]">
+            <option value="yes"<?php echo(@$this->element->payment_params->sandbox == 'yes' ? 'selected="selected"' : ""); ?>>
+                بله
+            </option>
+            <option value="no"<?php echo(@$this->element->payment_params->sandbox == 'no' ? 'selected="selected"' : ""); ?>>
+                خیر
+            </option>
+        </select>
     </td>
 </tr>
 <tr>

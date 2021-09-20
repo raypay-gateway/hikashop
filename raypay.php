@@ -58,7 +58,7 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
       return true;
     }
 
-    if (empty($this->payment_params->user_id) || empty($this->payment_params->acceptor_code)) {
+    if (empty($this->payment_params->user_id) || empty($this->payment_params->marketing_id)) {
       $this->app->enqueueMessage('لطفا شناسه کاربری و کد پذیرنده را برای پرداخت از طریق رای پی تنظیم کنید.');
       $do = false;
     }
@@ -77,10 +77,10 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
 
     //set information for request
     $user_id = $this->payment_params->user_id;
-    $acceptor_code = $this->payment_params->acceptor_code;
+    $marketing_id = $this->payment_params->marketing_id;
+    $sandbox = !($this->payment_params->sandbox == 'no');
     $desc = 'پرداخت هیکاشاپ ، سفارش شماره: ' . $order->order_id;
     $callback = HIKASHOP_LIVE . 'index.php?option=com_hikashop&ctrl=checkout&task=notify&notif_payment=' . $this->name .'&order_id=' . $order->order_id . '&tmpl=component&lang=' . $this->locale . $this->url_itemid;
-    $callback .= '&';
     $invoice_id             = round(microtime(true) * 1000);
 
     //check amount
@@ -109,14 +109,15 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
           'userID'       => $user_id,
           'redirectUrl'  => $callback,
           'factorNumber' => strval($order->order_id),
-          'acceptorCode' => $acceptor_code,
+          'marketingID' => $marketing_id,
           'email'        => $mail,
           'mobile'       => $phone,
           'fullName'     => $name,
-          'comment'      => $desc
+          'comment'      => $desc,
+          'enableSandBox'      => $sandbox
       );
       $this->order_log(json_encode($data)  , "data");
-    $url  = 'https://api.raypay.ir/raypay/api/v1/Payment/getPaymentTokenWithUserID';
+    $url  = 'https://api.raypay.ir/raypay/api/v1/Payment/pay';
 	$options = array('Content-Type: application/json');
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
@@ -146,18 +147,10 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
 
     //redirect to result
 
-      $access_token = $result->Data->Accesstoken;
-      $terminal_id  = $result->Data->TerminalID;
-
-      echo '<p style="color:#ff0000; font:18px Tahoma; direction:rtl;">در حال اتصال به درگاه بانکی. لطفا صبر کنید ...</p>';
-      echo '<form name="frmRayPayPayment" method="post" action=" https://mabna.shaparak.ir:8080/Pay ">';
-      echo '<input type="hidden" name="TerminalID" value="' . $terminal_id . '" />';
-      echo '<input type="hidden" name="token" value="' . $access_token . '" />';
-      echo '<input class="submit" type="submit" value="پرداخت" /></form>';
-      echo '<script>document.frmRayPayPayment.submit();</script>';
-
-      return false;
-
+      $token = $result->Data;
+      $link='https://my.raypay.ir/ipg?token=' . $token;
+      $this->payment_params->url = $link;
+      return $this->showPage('redirect');
   }
 
   /**
@@ -169,10 +162,9 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
   {
     $app        = JFactory::getApplication();
     $jinput     = $app->input;
-    $invoiceId = $jinput->get->get('?invoiceID', '', 'STRING');
     $orderId = $jinput->get->get('order_id', '', 'STRING');
 
-    if (empty($invoiceId)) {
+    if (empty($orderId)) {
       $msg = 'سفارش پیدا نشد.';
       $app->redirect(HIKASHOP_LIVE . 'index.php?option=com_hikashop', '<h4>' . $msg . '</h4>', 'Error');
     }
@@ -200,11 +192,11 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
         $history->amount = round($dbOrder->order_full_price, (int)$this->currency->currency_locale['int_frac_digits']);
         $history->data = ob_get_clean();
         $data = array('order_id' => $order_id);
-        $url = 'https://api.raypay.ir/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoiceId;
+        $url = 'https://api.raypay.ir/raypay/api/v1/Payment/verify';
 		$options = array('Content-Type: application/json');
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($_POST));
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_HTTPHEADER,$options );
 		$result = curl_exec($ch);
@@ -228,9 +220,10 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
           $app->redirect(HIKASHOP_LIVE . 'index.php?option=com_hikashop&ctrl=order', $msg, 'Error');
         }
 
-        $state           = $result->Data->State;
+        $state           = $result->Data->Status;
         $verify_order_id = $result->Data->FactorNumber;
         $verify_amount   = $result->Data->Amount;
+        $verify_invoice_id   = $result->Data->InvoiceID;
 
         if ($state === 1)
         {
@@ -243,7 +236,7 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
 
         $redirect_message_type = '';
         if (empty($verify_order_id) || empty($verify_amount) || $state !== 1) {
-          $msg  = 'پرداخت ناموفق بوده است. شناسه ارجاع بانکی رای پی : ' . $invoiceId;
+          $msg  = 'پرداخت ناموفق بوده است. شناسه ارجاع بانکی رای پی : ' . $verify_invoice_id;
           $order_status = $this->payment_params->pending_status;
           $order_text = JText::sprintf('CHECK_DOCUMENTATION', HIKASHOP_HELPURL . 'payment-raypay-error#verify') . "\r\n\r\n" . $order_text;
           $redirect_message_type = 'Error';
@@ -258,7 +251,7 @@ class plgHikashoppaymentRaypay extends hikashopPaymentPlugin
         }
 
         //generate msg for save to db
-        $msgForLog = $verify_status . "شناسه ارجاع بانکی رای پی :  $invoiceId ";
+        $msgForLog = $verify_status . "شناسه ارجاع بانکی رای پی :  $verify_invoice_id ";
 
         $email = new stdClass();
         $email->subject = JText::sprintf('PAYMENT_NOTIFICATION_FOR_ORDER', 'raypay', $order_status, $dbOrder->order_number);
